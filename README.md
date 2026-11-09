@@ -1,5 +1,5 @@
 # jogo-excalibur
-# [TJH escape]
+# TJH escape
 
 Jogo top-down no estilo **Berzerk**, feito com o framework **Excalibur.js** para a Atividade 008.
 
