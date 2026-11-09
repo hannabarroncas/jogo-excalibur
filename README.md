@@ -19,9 +19,14 @@ Jogo top-down no estilo **Berzerk**, feito com o framework **Excalibur.js** para
 **Objetivo:** destruir os robôs e sobreviver. Você tem 3 vidas e perde uma ao encostar em um robô ou ser atingido por um tiro.
 
 ## Funcionalidades
+- Menu inicial
 - Movimento em 8 direções e tiro na direção do movimento
-- Robôs que perseguem o jogador
-- Sistema de vidas com invencibilidade temporária após levar dano
+- Sala com paredes que bloqueiam o jogador
+- Robôs que perseguem e atiram no jogador
+- Sistema de vidas e pontuação na tela
+- Dificuldade progressiva
+- Tela de game over
+- Sons e controles de toque
 
 ## Planejamento
 O cronograma e as tarefas estão no [GitHub Projects](https://github.com/users/hannabarroncas/projects/1).
