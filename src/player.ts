@@ -1,86 +1,76 @@
-import { Actor, Collider, CollisionContact, Engine, Side, vec } from "excalibur";
+import { Actor, Engine, Keys, vec } from "excalibur";
 import { Resources } from "./resources";
+import { Bala } from "./bala";
 
-// Actors are the main unit of composition you'll likely use, anything that you want to draw and move around the screen
-// is likely built with an actor
-
-// They contain a bunch of useful components that you might use
-// actor.transform
-// actor.motion
-// actor.graphics
-// actor.body
-// actor.collider
-// actor.actions
-// actor.pointer
-
-
+// O jogador é um Actor: algo que aparece na tela, se move e colide
 export class Player extends Actor {
+  // Última direção em que o jogador andou. Começa olhando para a direita.
+  // É para essa direção que a bala vai.
+  private direcao = vec(1, 0);
+
+  // Roda uma vez, no momento em que o jogador é criado
   constructor() {
     super({
-      // Giving your actor a name is optional, but helps in debugging using the dev tools or debug mode
-      // https://github.com/excaliburjs/excalibur-extension/
-      // Chrome: https://chromewebstore.google.com/detail/excalibur-dev-tools/dinddaeielhddflijbbcmpefamfffekc
-      // Firefox: https://addons.mozilla.org/en-US/firefox/addon/excalibur-dev-tools/
-      name: 'Player',
-      pos: vec(150, 150),
-      width: 100,
-      height: 100,
-      // anchor: vec(0, 0), // Actors default center colliders and graphics with anchor (0.5, 0.5)
-      // collisionType: CollisionType.Active, // Collision Type Active means this participates in collisions read more https://excaliburjs.com/docs/collisiontypes
+      name: "Player",     // nome do jogador (ajuda a encontrar erros)
+      pos: vec(150, 150), // posição inicial: x (horizontal), y (vertical)
+      width: 100,         // largura, em pixels
+      height: 100,        // altura, em pixels
     });
-    
   }
 
+  // Roda uma vez, antes de o jogo começar a usar o jogador
   override onInitialize() {
-    // Generally recommended to stick logic in the "On initialize"
-    // This runs before the first update
-    // Useful when
-    // 1. You need things to be loaded like Images for graphics
-    // 2. You need excalibur to be initialized & started 
-    // 3. Deferring logic to run time instead of constructor time
-    // 4. Lazy instantiation
+    // Coloca a imagem da espada como aparência do jogador
     this.graphics.add(Resources.Sword.toSprite());
-
-    // Actions are useful for scripting common behavior, for example patrolling enemies
-    this.actions.delay(2000);
-    this.actions.repeatForever(ctx => {
-      ctx.moveBy({offset: vec(100, 0), duration: 1000});
-      ctx.moveBy({offset: vec(0, 100), duration: 1000});
-      ctx.moveBy({offset: vec(-100, 0), duration: 1000});
-      ctx.moveBy({offset: vec(0, -100), duration: 1000});
-    });
-
-    // Sometimes you want to click on an actor!
-    this.on('pointerdown', evt => {
-      // Pointer events tunnel in z order from the screen down, you can cancel them!
-      // if (true) {
-      //   evt.cancel();
-      // }
-      console.log('You clicked the actor @', evt.worldPos.toString());
-    });
   }
 
+  // Roda a cada quadro do jogo (muitas vezes por segundo)
   override onPreUpdate(engine: Engine, elapsedMs: number): void {
-    // Put any update logic here runs every frame before Actor builtins
-  }
+    // Velocidade do jogador, em pixels por segundo
+    const velocidade = 200;
 
-  override onPostUpdate(engine: Engine, elapsedMs: number): void {
-    // Put any update logic here runs every frame after Actor builtins
-  }
+    // Direção do movimento: começa parada a cada quadro
+    let x = 0; // horizontal: negativo = esquerda, positivo = direita
+    let y = 0; // vertical: negativo = cima, positivo = baixo
 
-  override onPreCollisionResolve(self: Collider, other: Collider, side: Side, contact: CollisionContact): void {
-    // Called before a collision is resolved, if you want to opt out of this specific collision call contact.cancel()
-  }
+    // Se a tecla W estiver segurada, o jogador sobe
+    if (engine.input.keyboard.isHeld(Keys.W)) {
+      y = -velocidade;
+    }
 
-  override onPostCollisionResolve(self: Collider, other: Collider, side: Side, contact: CollisionContact): void {
-    // Called every time a collision is resolved and overlap is solved
-  }
+    // Se a tecla S estiver segurada, o jogador desce
+    if (engine.input.keyboard.isHeld(Keys.S)) {
+      y = velocidade;
+    }
 
-  override onCollisionStart(self: Collider, other: Collider, side: Side, contact: CollisionContact): void {
-    // Called when a pair of objects are in contact
-  }
+    // Se a tecla A estiver segurada, o jogador vai para a esquerda
+    if (engine.input.keyboard.isHeld(Keys.A)) {
+      x = -velocidade;
+    }
 
-  override onCollisionEnd(self: Collider, other: Collider, side: Side, lastContact: CollisionContact): void {
-    // Called when a pair of objects separates
+    // Se a tecla D estiver segurada, o jogador vai para a direita
+    if (engine.input.keyboard.isHeld(Keys.D)) {
+      x = velocidade;
+    }
+
+    // Aplica a direção como velocidade do jogador.
+    // O Excalibur move o jogador sozinho de acordo com essa velocidade.
+    this.vel = vec(x, y);
+
+    // Se o jogador está andando, guarda essa direção para o tiro.
+    // normalize() deixa a direção com tamanho 1,
+    // para a bala ter a mesma velocidade em qualquer direção (até na diagonal).
+    if (x !== 0 || y !== 0) {
+      this.direcao = vec(x, y).normalize();
+    }
+
+    // Se a barra de espaço ACABOU de ser apertada, cria uma bala.
+    // wasPressed só vale no quadro em que a tecla foi apertada,
+    // então sai um tiro por aperto (e não uma rajada infinita).
+    if (engine.input.keyboard.wasPressed(Keys.Space)) {
+      // A bala nasce na posição do jogador e vai na direção guardada.
+      // clone() faz uma cópia da posição, para a bala não ficar "presa" ao jogador.
+      engine.add(new Bala(this.pos.clone(), this.direcao));
+    }
   }
 }
