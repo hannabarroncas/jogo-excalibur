@@ -2,6 +2,7 @@ import { Color, DisplayMode, Engine, FadeInOut } from "excalibur";
 import { loader } from "./resources";
 import { MyLevel } from "./level";
 import { MenuDificuldade } from "./menu";
+import { GameOver } from "./gameover";
 
 const game = new Engine({
   width: 800,
@@ -12,6 +13,7 @@ const game = new Engine({
   scenes: {
     menu: MenuDificuldade,
     jogo: MyLevel,
+    gameover: GameOver,
   },
 });
 

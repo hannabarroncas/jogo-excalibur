@@ -1,8 +1,10 @@
 import { Engine, Keys, Scene, SceneActivationContext, vec } from "excalibur";
 import { ConfigDificuldade, DIFICULDADES, NomeDificuldade } from "./dificuldade";
+import { Arena, criarParedes } from "./arena";
 import { Hud } from "./hud";
 import { Player } from "./player";
 import { Robo } from "./robo";
+import { tocarSom } from "./audio";
 
 export class MyLevel extends Scene<NomeDificuldade> {
   private jogador!: Player;
@@ -18,6 +20,9 @@ export class MyLevel extends Scene<NomeDificuldade> {
     this.tempoSpawn = 0;
     this.acabou = false;
     this.config = DIFICULDADES[context.data ?? "medio"];
+
+    this.add(new Arena());
+    for (const parede of criarParedes()) this.add(parede);
 
     this.jogador = new Player(this.config.vidaJogador, () => this.fimDeJogo());
     this.add(this.jogador);
@@ -64,15 +69,15 @@ export class MyLevel extends Scene<NomeDificuldade> {
     const lado = Math.floor(Math.random() * 4);
 
     if (lado === 0) {
-      return vec(40, 40 + Math.random() * (altura - 80));
+      return vec(55, 55 + Math.random() * (altura - 110));
     }
     if (lado === 1) {
-      return vec(largura - 40, 40 + Math.random() * (altura - 80));
+      return vec(largura - 55, 55 + Math.random() * (altura - 110));
     }
     if (lado === 2) {
-      return vec(40 + Math.random() * (largura - 80), 40);
+      return vec(55 + Math.random() * (largura - 110), 55);
     }
-    return vec(40 + Math.random() * (largura - 80), altura - 40);
+    return vec(55 + Math.random() * (largura - 110), altura - 55);
   }
 
   private ganharPontos() {
@@ -85,8 +90,10 @@ export class MyLevel extends Scene<NomeDificuldade> {
 
   private fimDeJogo() {
     this.acabou = true;
-    this.atualizarHud();
-    this.hud.mostrarAviso(`Fim de jogo  •  Pontos: ${this.pontos}  •  Enter volta ao menu`);
+    tocarSom("fim");
+    void this.engine.goToScene("gameover", {
+      sceneActivationData: { score: this.pontos, difficulty: this.config.nome },
+    });
   }
 
   private atualizarHud() {

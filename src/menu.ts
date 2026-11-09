@@ -1,5 +1,6 @@
 import { Actor, Color, Engine, Font, FontUnit, Keys, Label, Scene, TextAlign, vec } from "excalibur";
 import { NomeDificuldade } from "./dificuldade";
+import { tocarSom } from "./audio";
 
 export class MenuDificuldade extends Scene {
   override onInitialize(engine: Engine): void {
@@ -48,6 +49,7 @@ export class MenuDificuldade extends Scene {
   }
 
   private iniciar(engine: Engine, dificuldade: NomeDificuldade) {
+    tocarSom("menu");
     void engine.goToScene("jogo", { sceneActivationData: dificuldade });
   }
 }

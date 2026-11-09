@@ -18,7 +18,7 @@ export class Bala extends Actor {
       width: 10,
       height: 10,
       color: doJogador ? Color.Yellow : Color.fromHex("#ff6b35"),
-      collisionType: CollisionType.Passive,
+      collisionType: CollisionType.Active,
       collisionGroup: doJogador ? Grupos.balaJogador : Grupos.balaRobo,
     });
 
@@ -29,5 +29,8 @@ export class Bala extends Actor {
   override onInitialize() {
     // Quando a bala sai da tela, ela é removida do jogo
     this.on("exitviewport", () => this.kill());
+    this.on("collisionstart", (evento) => {
+      if (evento.other.owner.hasTag("parede")) this.kill();
+    });
   }
 }

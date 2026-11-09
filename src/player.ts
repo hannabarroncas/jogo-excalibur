@@ -2,6 +2,7 @@ import { Actor, CollisionType, Color, Engine, Keys, vec } from "excalibur";
 import { Bala } from "./bala";
 import { Grupos } from "./grupos";
 import { Resources } from "./resources";
+import { tocarSom } from "./audio";
 
 export class Player extends Actor {
   private direcao = vec(1, 0);
@@ -14,7 +15,7 @@ export class Player extends Actor {
       pos: vec(400, 300),
       width: 100,
       height: 100,
-      collisionType: CollisionType.Passive,
+      collisionType: CollisionType.Active,
       collisionGroup: Grupos.jogador,
     });
     this.vida = vida;
@@ -64,12 +65,14 @@ export class Player extends Actor {
     }
 
     if (engine.input.keyboard.wasPressed(Keys.Space)) {
+      tocarSom("tiro");
       engine.add(new Bala(this.pos.clone(), this.direcao, "jogador"));
     }
   }
 
   private levarDano() {
     this.vida -= 1;
+    tocarSom("dano");
     this.actions.flash(Color.Red, 80);
     if (this.vida <= 0) {
       this.aoMorrer();

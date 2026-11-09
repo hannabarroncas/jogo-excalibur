@@ -3,6 +3,7 @@ import { Bala } from "./bala";
 import { ConfigDificuldade } from "./dificuldade";
 import { Grupos } from "./grupos";
 import { Player } from "./player";
+import { tocarSom } from "./audio";
 
 export class Robo extends Actor {
   private tempoDesdeTiro = 0;
@@ -15,7 +16,7 @@ export class Robo extends Actor {
       name: "Robo",
       width: 44,
       height: 52,
-      collisionType: CollisionType.Passive,
+      collisionType: CollisionType.Active,
       collisionGroup: Grupos.robo,
     });
 
@@ -67,6 +68,7 @@ export class Robo extends Actor {
     if (this.isKilled()) {
       return;
     }
+    tocarSom("ponto");
     this.aoMorrer();
     this.kill();
   }
