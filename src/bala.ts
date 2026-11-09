@@ -1,4 +1,5 @@
-import { Actor, CollisionType, Color, Vector } from "excalibur";
+import { Actor, CollisionType, Vector } from "excalibur";
+import { graficoBala } from "./graficos";
 import { Grupos } from "./grupos";
 
 // Diz quem atirou, para a bala não acertar o próprio dono
@@ -17,8 +18,7 @@ export class Bala extends Actor {
       pos: posicao,
       width: 10,
       height: 10,
-      color: doJogador ? Color.Yellow : Color.fromHex("#ff6b35"),
-      collisionType: CollisionType.Active,
+      collisionType: CollisionType.Passive,
       collisionGroup: doJogador ? Grupos.balaJogador : Grupos.balaRobo,
     });
 
@@ -27,10 +27,10 @@ export class Bala extends Actor {
   }
 
   override onInitialize() {
+    // Todas as balas do mesmo lado usam o MESMO desenho em cache
+    this.graphics.add(graficoBala(this.origem));
+
     // Quando a bala sai da tela, ela é removida do jogo
     this.on("exitviewport", () => this.kill());
-    this.on("collisionstart", (evento) => {
-      if (evento.other.owner.hasTag("parede")) this.kill();
-    });
   }
 }

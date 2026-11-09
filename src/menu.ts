@@ -1,39 +1,43 @@
 import { Actor, Color, Engine, Font, FontUnit, Keys, Label, Scene, TextAlign, vec } from "excalibur";
-import { NomeDificuldade } from "./dificuldade";
-import { tocarSom } from "./audio";
+import { Controles } from "./controles";
+import type { NomeDificuldade } from "./dificuldade";
+import { Arena } from "./efeitos";
+import { FONTE, graficoBotao, LARGURA } from "./graficos";
+
+function criarTexto(texto: string, y: number, tamanho: number, cor: Color, negrito = false) {
+  return new Label({
+    text: texto,
+    pos: vec(LARGURA / 2, y),
+    color: cor,
+    font: new Font({
+      family: FONTE,
+      size: tamanho,
+      unit: FontUnit.Px,
+      textAlign: TextAlign.Center,
+      bold: negrito,
+    }),
+  });
+}
 
 export class MenuDificuldade extends Scene {
   override onInitialize(engine: Engine): void {
-    const titulo = new Label({
-      text: "Escolha a dificuldade",
-      pos: vec(400, 140),
-      color: Color.White,
-      font: new Font({
-        family: "sans-serif",
-        size: 36,
-        unit: FontUnit.Px,
-        textAlign: TextAlign.Center,
-        bold: true,
-      }),
-    });
-    this.add(titulo);
+    this.add(new Arena());
 
-    const dica = new Label({
-      text: "WASD move  •  Espaço atira  •  1 / 2 / 3 escolhe",
-      pos: vec(400, 190),
-      color: Color.Gray,
-      font: new Font({
-        family: "sans-serif",
-        size: 16,
-        unit: FontUnit.Px,
-        textAlign: TextAlign.Center,
-      }),
-    });
-    this.add(dica);
+    this.add(criarTexto("EXCALIBUR", 110, 64, Color.fromHex("#d4af37"), true));
+    this.add(criarTexto("Escolha a dificuldade", 172, 22, Color.fromHex("#cbd5e1")));
 
-    this.add(criarBotao("1  Fácil", vec(400, 280), Color.fromHex("#27ae60"), () => this.iniciar(engine, "facil")));
-    this.add(criarBotao("2  Médio", vec(400, 360), Color.fromHex("#e67e22"), () => this.iniciar(engine, "medio")));
-    this.add(criarBotao("3  Difícil", vec(400, 440), Color.fromHex("#c0392b"), () => this.iniciar(engine, "dificil")));
+    this.add(criarBotao("1  Fácil", vec(LARGURA / 2, 270), "#27ae60", () => this.iniciar(engine, "facil")));
+    this.add(criarBotao("2  Médio", vec(LARGURA / 2, 350), "#d35400", () => this.iniciar(engine, "medio")));
+    this.add(criarBotao("3  Difícil", vec(LARGURA / 2, 430), "#a93226", () => this.iniciar(engine, "dificil")));
+
+    const dica = Controles.ativo
+      ? "Joystick move  •  Botão ATIRAR dispara  •  Toque para escolher"
+      : "WASD ou setas movem  •  Espaço atira  •  1 / 2 / 3 escolhe";
+    this.add(criarTexto(dica, 520, 16, Color.fromHex("#9aa5b8")));
+  }
+
+  override onActivate(): void {
+    Controles.esconder();
   }
 
   override onPreUpdate(engine: Engine): void {
@@ -49,32 +53,22 @@ export class MenuDificuldade extends Scene {
   }
 
   private iniciar(engine: Engine, dificuldade: NomeDificuldade) {
-    tocarSom("menu");
     void engine.goToScene("jogo", { sceneActivationData: dificuldade });
   }
 }
 
-function criarBotao(texto: string, posicao: ReturnType<typeof vec>, cor: Color, aoClicar: () => void) {
+// Botão grande (300x64): confortável para o dedo no celular
+function criarBotao(texto: string, posicao: ReturnType<typeof vec>, cor: string, aoClicar: () => void) {
   const botao = new Actor({
     pos: posicao,
-    width: 260,
-    height: 56,
-    color: cor,
+    width: 300,
+    height: 64,
   });
 
-  const rotulo = new Label({
-    text: texto,
-    pos: vec(0, 0),
-    color: Color.White,
-    font: new Font({
-      family: "sans-serif",
-      size: 22,
-      unit: FontUnit.Px,
-      textAlign: TextAlign.Center,
-    }),
-  });
-  rotulo.anchor = vec(0.5, 0.5);
-  botao.addChild(rotulo);
+  botao.graphics.add(graficoBotao(texto, cor));
   botao.on("pointerup", aoClicar);
+  // Realce ao passar o mouse
+  botao.on("pointerenter", () => botao.scale.setTo(1.05, 1.05));
+  botao.on("pointerleave", () => botao.scale.setTo(1, 1));
   return botao;
 }

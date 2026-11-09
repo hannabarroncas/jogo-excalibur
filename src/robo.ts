@@ -1,9 +1,10 @@
-import { Actor, Canvas, CollisionType, Color, Engine, vec } from "excalibur";
+import { Actor, CollisionType, Engine, vec } from "excalibur";
 import { Bala } from "./bala";
-import { ConfigDificuldade } from "./dificuldade";
+import type { ConfigDificuldade } from "./dificuldade";
+import { Explosao } from "./efeitos";
+import { graficoRobo } from "./graficos";
 import { Grupos } from "./grupos";
-import { Player } from "./player";
-import { tocarSom } from "./audio";
+import type { Player } from "./player";
 
 export class Robo extends Actor {
   private tempoDesdeTiro = 0;
@@ -16,7 +17,7 @@ export class Robo extends Actor {
       name: "Robo",
       width: 44,
       height: 52,
-      collisionType: CollisionType.Active,
+      collisionType: CollisionType.Passive,
       collisionGroup: Grupos.robo,
     });
 
@@ -26,7 +27,8 @@ export class Robo extends Actor {
   }
 
   override onInitialize() {
-    this.graphics.add(desenharRobo());
+    // Todos os robôs usam o MESMO desenho em cache
+    this.graphics.add(graficoRobo());
 
     // Se uma bala do jogador encosta no robô, o robô morre
     this.on("collisionstart", (evento) => {
@@ -40,27 +42,30 @@ export class Robo extends Actor {
 
   override onPreUpdate(engine: Engine, elapsedMs: number): void {
     if (this.jogador.isKilled()) {
-      this.vel = vec(0, 0);
+      this.vel.setTo(0, 0);
       return;
     }
 
-    // Vetor do robô até o jogador
-    const paraJogador = this.jogador.pos.sub(this.pos);
-    const distancia = paraJogador.distance();
+    // Vetor do robô até o jogador (conta feita à mão para não criar objetos a cada frame)
+    const dx = this.jogador.pos.x - this.pos.x;
+    const dy = this.jogador.pos.y - this.pos.y;
+    const distancia = Math.sqrt(dx * dx + dy * dy);
 
     if (distancia > 1) {
-      const direcao = paraJogador.normalize();
+      const nx = dx / distancia;
+      const ny = dy / distancia;
+
       // Persegue o jogador na velocidade da dificuldade
-      this.vel = direcao.scale(this.config.velocidadeRobo);
+      this.vel.setTo(nx * this.config.velocidadeRobo, ny * this.config.velocidadeRobo);
 
       this.tempoDesdeTiro += elapsedMs;
       if (this.tempoDesdeTiro >= this.config.cadenciaTiroMs) {
         this.tempoDesdeTiro = 0;
         // Atira na direção do jogador
-        engine.add(new Bala(this.pos.clone(), direcao, "robo", this.config.velocidadeBalaRobo));
+        engine.add(new Bala(this.pos.clone(), vec(nx, ny), "robo", this.config.velocidadeBalaRobo));
       }
     } else {
-      this.vel = vec(0, 0);
+      this.vel.setTo(0, 0);
     }
   }
 
@@ -68,35 +73,8 @@ export class Robo extends Actor {
     if (this.isKilled()) {
       return;
     }
-    tocarSom("ponto");
+    this.scene?.add(new Explosao(this.pos.clone(), "robo"));
     this.aoMorrer();
     this.kill();
   }
-}
-
-function desenharRobo() {
-  return new Canvas({
-    width: 44,
-    height: 52,
-    cache: true,
-    draw: (ctx) => {
-      ctx.fillStyle = Color.fromHex("#7f8c8d").toString();
-      ctx.fillRect(16, 2, 12, 10);
-
-      ctx.fillStyle = Color.fromHex("#c0392b").toString();
-      ctx.fillRect(8, 12, 28, 24);
-
-      ctx.fillStyle = Color.fromHex("#2ecc71").toString();
-      ctx.fillRect(14, 5, 5, 5);
-      ctx.fillRect(25, 5, 5, 5);
-
-      ctx.fillStyle = Color.fromHex("#bdc3c7").toString();
-      ctx.fillRect(2, 16, 8, 16);
-      ctx.fillRect(34, 16, 8, 16);
-
-      ctx.fillStyle = Color.fromHex("#2c3e50").toString();
-      ctx.fillRect(12, 36, 8, 14);
-      ctx.fillRect(24, 36, 8, 14);
-    },
-  });
 }

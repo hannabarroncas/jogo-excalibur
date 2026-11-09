@@ -9,6 +9,8 @@ export const Resources = {
 // We build a loader and add all of our resources to the boot loader
 // You can build your own loader by extending DefaultLoader
 export const loader = new Loader();
+// O jogo não tem áudio, então não precisa do botão "Play": abre direto no menu
+loader.suppressPlayButton = true;
 for (const res of Object.values(Resources)) {
   loader.addResource(res);
 }
