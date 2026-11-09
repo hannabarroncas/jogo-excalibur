@@ -1,25 +1,33 @@
-import { Actor, Color, Vector } from "excalibur";
+import { Actor, CollisionType, Color, Vector } from "excalibur";
+import { Grupos } from "./grupos";
+
+// Diz quem atirou, para a bala não acertar o próprio dono
+export type OrigemBala = "jogador" | "robo";
 
 // A bala é um Actor pequeno que anda em linha reta
 export class Bala extends Actor {
-  // Recebe onde a bala nasce e para qual direção ela vai
-  constructor(posicao: Vector, direcao: Vector) {
+  readonly origem: OrigemBala;
+
+  // Recebe onde a bala nasce, para onde vai, quem atirou e a velocidade
+  constructor(posicao: Vector, direcao: Vector, origem: OrigemBala = "jogador", velocidade = 500) {
+    const doJogador = origem === "jogador";
+
     super({
-      name: "Bala",        // nome da bala (ajuda a encontrar erros)
-      pos: posicao,        // nasce na posição recebida (a do jogador)
-      width: 10,           // largura, em pixels
-      height: 10,          // altura, em pixels
-      color: Color.Yellow, // desenha um quadradinho amarelo
+      name: "Bala",
+      pos: posicao,
+      width: 10,
+      height: 10,
+      color: doJogador ? Color.Yellow : Color.fromHex("#ff6b35"),
+      collisionType: CollisionType.Passive,
+      collisionGroup: doJogador ? Grupos.balaJogador : Grupos.balaRobo,
     });
 
-    // Velocidade da bala: a direção multiplicada por 500 pixels por segundo
-    this.vel = direcao.scale(500);
+    this.origem = origem;
+    this.vel = direcao.scale(velocidade);
   }
 
-  // Roda uma vez, antes de a bala começar a ser usada
   override onInitialize() {
-    // Quando a bala sai da tela, ela é removida do jogo,
-    // para o jogo não ficar pesado com balas invisíveis
+    // Quando a bala sai da tela, ela é removida do jogo
     this.on("exitviewport", () => this.kill());
   }
 }

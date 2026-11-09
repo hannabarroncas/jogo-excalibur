@@ -1,40 +1,95 @@
-import { DefaultLoader, Engine, ExcaliburGraphicsContext, Scene, SceneActivationContext } from "excalibur";
+import { Engine, Keys, Scene, SceneActivationContext, vec } from "excalibur";
+import { ConfigDificuldade, DIFICULDADES, NomeDificuldade } from "./dificuldade";
+import { Hud } from "./hud";
 import { Player } from "./player";
+import { Robo } from "./robo";
 
-export class MyLevel extends Scene {
-    override onInitialize(engine: Engine): void {
-        // Scene.onInitialize is where we recommend you perform the composition for your game
-        const player = new Player();
-        this.add(player); // Actors need to be added to a scene to be drawn
+export class MyLevel extends Scene<NomeDificuldade> {
+  private jogador!: Player;
+  private hud!: Hud;
+  private config!: ConfigDificuldade;
+  private pontos = 0;
+  private tempoSpawn = 0;
+  private acabou = false;
+
+  override onActivate(context: SceneActivationContext<NomeDificuldade>): void {
+    this.clear();
+    this.pontos = 0;
+    this.tempoSpawn = 0;
+    this.acabou = false;
+    this.config = DIFICULDADES[context.data ?? "medio"];
+
+    this.jogador = new Player(this.config.vidaJogador, () => this.fimDeJogo());
+    this.add(this.jogador);
+
+    this.hud = new Hud();
+    this.add(this.hud);
+    this.atualizarHud();
+
+    this.nascerRobo();
+  }
+
+  override onDeactivate(): void {
+    this.clear();
+  }
+
+  override onPreUpdate(engine: Engine, elapsedMs: number): void {
+    if (this.acabou) {
+      if (engine.input.keyboard.wasPressed(Keys.Enter) || engine.input.keyboard.wasPressed(Keys.Escape)) {
+        void engine.goToScene("menu");
+      }
+      return;
     }
 
-    override onPreLoad(loader: DefaultLoader): void {
-        // Add any scene specific resources to load
+    this.tempoSpawn += elapsedMs;
+    if (this.tempoSpawn >= this.config.spawnMs && this.contarRobos() < this.config.maxRobos) {
+      this.tempoSpawn = 0;
+      this.nascerRobo();
     }
+  }
 
-    override onActivate(context: SceneActivationContext<unknown>): void {
-        // Called when Excalibur transitions to this scene
-        // Only 1 scene is active at a time
-    }
+  private contarRobos(): number {
+    return this.actors.filter((ator) => ator.name === "Robo" && !ator.isKilled()).length;
+  }
 
-    override onDeactivate(context: SceneActivationContext): void {
-        // Called when Excalibur transitions away from this scene
-        // Only 1 scene is active at a time
-    }
+  private nascerRobo() {
+    const robo = new Robo(this.jogador, this.config, () => this.ganharPontos());
+    robo.pos = this.posicaoNascedouro();
+    this.add(robo);
+  }
 
-    override onPreUpdate(engine: Engine, elapsedMs: number): void {
-        // Called before anything updates in the scene
-    }
+  private posicaoNascedouro() {
+    const largura = this.engine.drawWidth;
+    const altura = this.engine.drawHeight;
+    const lado = Math.floor(Math.random() * 4);
 
-    override onPostUpdate(engine: Engine, elapsedMs: number): void {
-        // Called after everything updates in the scene
+    if (lado === 0) {
+      return vec(40, 40 + Math.random() * (altura - 80));
     }
+    if (lado === 1) {
+      return vec(largura - 40, 40 + Math.random() * (altura - 80));
+    }
+    if (lado === 2) {
+      return vec(40 + Math.random() * (largura - 80), 40);
+    }
+    return vec(40 + Math.random() * (largura - 80), altura - 40);
+  }
 
-    override onPreDraw(ctx: ExcaliburGraphicsContext, elapsedMs: number): void {
-        // Called before Excalibur draws to the screen
+  private ganharPontos() {
+    if (this.acabou) {
+      return;
     }
+    this.pontos += this.config.pontosPorRobo;
+    this.atualizarHud();
+  }
 
-    override onPostDraw(ctx: ExcaliburGraphicsContext, elapsedMs: number): void {
-        // Called after Excalibur draws to the screen
-    }
+  private fimDeJogo() {
+    this.acabou = true;
+    this.atualizarHud();
+    this.hud.mostrarAviso(`Fim de jogo  •  Pontos: ${this.pontos}  •  Enter volta ao menu`);
+  }
+
+  private atualizarHud() {
+    this.hud.atualizar(this.pontos, this.jogador.vida, this.config.rotulo);
+  }
 }
